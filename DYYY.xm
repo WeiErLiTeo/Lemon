@@ -267,6 +267,51 @@
 }
 %end
 
+// 隐藏搜索页“猜你想搜”下面的所有内容
+%hook AWERLSegmentView
+
+- (void)layoutSubviews {
+    %orig;
+
+    if (!DYYYGetBool(@"DYYYHideSearchRecommendations")) {
+        // 如果设置关闭，则不执行隐藏逻辑
+        return;
+    }
+
+    // 向上查找AWESearchViewController
+    UIResponder *responder = self;
+    while (responder) {
+        if ([responder isKindOfClass:%c(AWESearchViewController)]) {
+            // 找到了，先隐藏自己（即tab bar）
+            self.hidden = YES;
+
+            // 查找并隐藏紧跟在自己下方的兄弟视图（即内容视图）
+            UIView *superview = self.superview;
+            if (superview) {
+                CGFloat bottomOfSegmentView = self.frame.origin.y + self.frame.size.height;
+                // 遍历兄弟视图
+                for (UIView *sibling in superview.subviews) {
+                    // 跳过自己
+                    if (sibling == self) {
+                        continue;
+                    }
+                    // 如果兄弟视图的y坐标紧跟在自己的下方，就隐藏它
+                    // 使用一个小的容差来处理可能的浮点数不精确问题和布局差异
+                    if (fabs(sibling.frame.origin.y - bottomOfSegmentView) < 10.0) {
+                        sibling.hidden = YES;
+                        // 假设只有一个内容视图，找到后就可以退出
+                        break;
+                    }
+                }
+            }
+            break;
+        }
+        responder = [responder nextResponder];
+    }
+}
+
+%end
+
 %hook UICollectionView
 
 // 拦截手指拖动
