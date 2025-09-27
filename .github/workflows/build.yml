@@ -1,0 +1,42 @@
+name: Build Tweak
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Theos
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git curl perl build-essential xz-utils
+        git clone --recursive https://github.com/theos/theos.git $HOME/theos
+        echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+
+    - name: Download iOS 16.2 SDK
+      run: |
+        if [ ! -d "$HOME/theos/sdks" ]; then
+            mkdir -p $HOME/theos/sdks
+        fi
+        curl -LO https://github.com/xybp888/iOS-SDKs/releases/download/16.2/iPhoneOS16.2.sdk.zip
+        unzip iPhoneOS16.2.sdk.zip -d $HOME/theos/sdks/
+        rm iPhoneOS16.2.sdk.zip
+
+    - name: Build Package
+      run: |
+        source /etc/profile
+        make package
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: DYYY-Tweak-Package
+        path: packages/*.deb
