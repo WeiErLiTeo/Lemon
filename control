@@ -8,5 +8,5 @@ Depends: firmware (>= 5.0), mobilesubstrate
 Priority: optional
 Maintainer: huami
 Author: huami
-Architecture: iphoneos-arm
+Architecture: iphoneos-arm64
 Icon: https://Mieing.Github.io/repo/file/TikTok.png

@@ -31,9 +31,7 @@ jobs:
         rm iPhoneOS16.2.sdk.zip
 
     - name: Build Package
-      run: |
-        source /etc/profile
-        make package
+      run: make package SCHEME=rootless
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
