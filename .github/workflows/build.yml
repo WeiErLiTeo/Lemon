@@ -14,9 +14,9 @@ on:
 
 # 定义工作任务
 jobs:
-  build:
-    # 使用最新的 Ubuntu 虚拟机环境
-    runs_on: ubuntu-latest
+  build: # <--- build 定义在这里
+    # 'runs-on' 是 'build' 的一部分，所以需要向内缩进
+    runs-on: ubuntu-latest
 
     # 工作步骤
     steps:
@@ -37,7 +37,6 @@ jobs:
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV # 设置 Theos 环境变量
 
       # 第四步：下载并安装 iOS SDK
-      # 这里使用 iOS 16.1 SDK 作为示例，Theos 需要它来编译
       - name: Download iOS 16.1 SDK
         run: |
           mkdir -p "$HOME/theos/sdks"
@@ -46,7 +45,6 @@ jobs:
           rm iPhoneOS16.1.sdk.zip
 
       # 第五步：编译和打包 Tweak
-      # 因为你的 Makefile 和 Tweak.x 文件都在仓库根目录，所以我们直接在根目录执行 make
       - name: Build and Package Tweak
         run: |
           make clean
