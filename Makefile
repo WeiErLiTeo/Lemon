@@ -6,7 +6,7 @@
 #  Created on: 2024/10/04
 #
 
-TARGET = iphone:clang:latest:15.0
+TARGET := iphone:clang:16.1:14.0
 ARCHS  = arm64 arm64e
 
 # 如果外部没有传入 THEOS，就默认使用 ~/theos
