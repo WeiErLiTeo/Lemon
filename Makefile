@@ -6,7 +6,7 @@
 #  Created on: 2024/10/04
 #
 
-TARGET = iphone:clang:latest:16.2
+TARGET = iphone:clang:latest:16.1
 ARCHS = arm64 arm64e
 
 #export THEOS=/Users/huami/theos

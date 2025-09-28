@@ -3,7 +3,7 @@ set -e
 
 # Update and install dependencies
 sudo apt-get update
-sudo apt-get install -y git curl perl build-essential xz-utils
+sudo apt-get install -y git curl perl build-essential xz-utils unzip
 
 # Clone Theos
 if [ ! -d "/opt/theos" ]; then
@@ -15,25 +15,19 @@ fi
 echo 'export THEOS=/opt/theos' >> ~/.bashrc
 export THEOS=/opt/theos
 
-# Download and install the iOS 16.2 SDK
+# Download and install the iOS 16.1 SDK
 if [ ! -d "$THEOS/sdks" ]; then
     mkdir -p $THEOS/sdks
 fi
 
-if [ ! -d "$THEOS/sdks/iPhoneOS16.2.sdk" ]; then
-    echo "Downloading and verifying iOS 16.2 SDK..."
-    set -x
-    wget https://sdks.akestic.com/iPhoneOS16.2.sdk.zip
-    if ! file iPhoneOS16.2.sdk.zip | grep -q "Zip archive data"; then
-        echo "Error: Downloaded file is not a valid zip archive."
-        exit 1
-    fi
-    unzip -o iPhoneOS16.2.sdk.zip -d $THEOS/sdks/
-    rm iPhoneOS16.2.sdk.zip
-    set +x
+if [ ! -d "$THEOS/sdks/iPhoneOS16.1.sdk" ]; then
+    echo "Downloading iOS 16.1 SDK..."
+    curl -LO https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.1.sdk.zip
+    unzip iPhoneOS16.1.sdk.zip -d $THEOS/sdks/
+    rm iPhoneOS16.1.sdk.zip
     echo "SDK installed."
 else
-    echo "iOS 16.2 SDK already exists."
+    echo "iOS 16.1 SDK already exists."
 fi
 
 echo "Theos setup complete. Please run 'source ~/.bashrc' or restart the terminal."

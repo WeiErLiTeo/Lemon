@@ -12,7 +12,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Theos
       run: |
@@ -21,19 +21,14 @@ jobs:
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-    - name: Download and Verify iOS 16.2 SDK
+    - name: Download iOS 16.1 SDK
       run: |
-        set -x
         if [ ! -d "$HOME/theos/sdks" ]; then
             mkdir -p $HOME/theos/sdks
         fi
-        wget https://sdks.akestic.com/iPhoneOS16.2.sdk.zip
-        if ! file iPhoneOS16.2.sdk.zip | grep -q "Zip archive data"; then
-            echo "Error: Downloaded file is not a valid zip archive."
-            exit 1
-        fi
-        unzip -o iPhoneOS16.2.sdk.zip -d $HOME/theos/sdks/
-        rm iPhoneOS16.2.sdk.zip
+        curl -LO https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.1.sdk.zip
+        unzip iPhoneOS16.1.sdk.zip -d $HOME/theos/sdks/
+        rm iPhoneOS16.1.sdk.zip
 
     - name: Build Package
       run: make package SCHEME=rootless
