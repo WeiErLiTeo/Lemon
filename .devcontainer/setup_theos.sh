@@ -22,7 +22,7 @@ fi
 
 if [ ! -d "$THEOS/sdks/iPhoneOS16.2.sdk" ]; then
     echo "Downloading iOS 16.2 SDK..."
-    curl -LO https://github.com/xybp888/iOS-SDKs/releases/download/16.2/iPhoneOS16.2.sdk.zip
+    curl -LO https://github.com/ginsudev/sdks/releases/download/21A326/iPhoneOS16.2.sdk.zip
     unzip iPhoneOS16.2.sdk.zip -d $THEOS/sdks/
     rm iPhoneOS16.2.sdk.zip
     echo "SDK installed."
