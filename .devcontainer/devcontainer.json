@@ -1,9 +1,21 @@
 {
-  "name": "iOS Tweak Development",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers/features/git:1": {}
+  "name": "iOS Tweak Development with Theos",
+  "image": "theos/theos-docker:latest",
+
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "ms-vscode.cpptools-extension-pack"
+      ]
+    }
   },
-  "postCreateCommand": "bash .devcontainer/setup_theos.sh",
-  "remoteUser": "vscode"
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  // "postCreateCommand": "make",
+
+  // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+  "remoteUser": "root"
 }
