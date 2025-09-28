@@ -21,10 +21,16 @@ if [ ! -d "$THEOS/sdks" ]; then
 fi
 
 if [ ! -d "$THEOS/sdks/iPhoneOS16.2.sdk" ]; then
-    echo "Downloading iOS 16.2 SDK..."
-    curl -LO https://github.com/ginsudev/sdks/releases/download/21A326/iPhoneOS16.2.sdk.zip
-    unzip iPhoneOS16.2.sdk.zip -d $THEOS/sdks/
+    echo "Downloading and verifying iOS 16.2 SDK..."
+    set -x
+    wget https://sdks.akestic.com/iPhoneOS16.2.sdk.zip
+    if ! file iPhoneOS16.2.sdk.zip | grep -q "Zip archive data"; then
+        echo "Error: Downloaded file is not a valid zip archive."
+        exit 1
+    fi
+    unzip -o iPhoneOS16.2.sdk.zip -d $THEOS/sdks/
     rm iPhoneOS16.2.sdk.zip
+    set +x
     echo "SDK installed."
 else
     echo "iOS 16.2 SDK already exists."

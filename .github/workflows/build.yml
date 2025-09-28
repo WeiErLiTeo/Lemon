@@ -21,13 +21,18 @@ jobs:
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-    - name: Download iOS 16.2 SDK
+    - name: Download and Verify iOS 16.2 SDK
       run: |
+        set -x
         if [ ! -d "$HOME/theos/sdks" ]; then
             mkdir -p $HOME/theos/sdks
         fi
-        curl -LO https://github.com/ginsudev/sdks/releases/download/21A326/iPhoneOS16.2.sdk.zip
-        unzip iPhoneOS16.2.sdk.zip -d $HOME/theos/sdks/
+        wget https://sdks.akestic.com/iPhoneOS16.2.sdk.zip
+        if ! file iPhoneOS16.2.sdk.zip | grep -q "Zip archive data"; then
+            echo "Error: Downloaded file is not a valid zip archive."
+            exit 1
+        fi
+        unzip -o iPhoneOS16.2.sdk.zip -d $HOME/theos/sdks/
         rm iPhoneOS16.2.sdk.zip
 
     - name: Build Package
