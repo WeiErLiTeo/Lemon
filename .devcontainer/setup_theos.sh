@@ -15,6 +15,17 @@ fi
 echo 'export THEOS=/opt/theos' >> ~/.bashrc
 export THEOS=/opt/theos
 
+# Download and install the iOS Toolchain
+if [ ! -d "/usr/bin/clang-18" ]; then
+    echo "Downloading iOS Toolchain..."
+    curl -LO https://github.com/CRKatri/llvm-project/releases/download/18.1.5-1/llvm-project-18.1.5-1-linux.tar.xz
+    sudo tar -xf llvm-project-18.1.5-1-linux.tar.xz -C /
+    rm llvm-project-18.1.5-1-linux.tar.xz
+    echo "Toolchain installed."
+else
+    echo "iOS Toolchain already exists."
+fi
+
 # Download and install the iOS 16.1 SDK
 if [ ! -d "$THEOS/sdks" ]; then
     mkdir -p $THEOS/sdks

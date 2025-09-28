@@ -21,8 +21,14 @@ jobs:
         git clone --recursive https://github.com/theos/theos.git $HOME/theos
         echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-    - name: Download iOS 16.1 SDK
+    - name: Download Toolchain and SDK
       run: |
+        # Download and install the iOS Toolchain
+        curl -LO https://github.com/CRKatri/llvm-project/releases/download/18.1.5-1/llvm-project-18.1.5-1-linux.tar.xz
+        sudo tar -xf llvm-project-18.1.5-1-linux.tar.xz -C /
+        rm llvm-project-18.1.5-1-linux.tar.xz
+
+        # Download and install the iOS 16.1 SDK
         if [ ! -d "$HOME/theos/sdks" ]; then
             mkdir -p $HOME/theos/sdks
         fi
