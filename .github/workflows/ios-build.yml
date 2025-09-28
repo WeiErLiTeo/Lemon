@@ -1,0 +1,31 @@
+name: iOS Build
+
+on:
+  push:
+    branches:
+      - feature/toggleable-search-ui-removal
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Theos
+        run: |
+          brew install ldid xz
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          brew install dpkg
+          echo "THEOS=~/theos" >> $GITHUB_ENV
+          
+      - name: Build Package
+        run: |
+          make package THEOS_PACKAGE_SCHEME=rootless
+          
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: package
+          path: packages/*.deb
