@@ -11,23 +11,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ 检出代码
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2️⃣ 安装依赖
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential git perl fakeroot dpkg lzma unzip curl
 
-      # 3️⃣ 克隆 Theos
       - name: Clone Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-      # 4️⃣ 下载并安装 iOS 16.1 SDK
+      # ✅ 新增：安装交叉编译工具链
+      - name: Install iOS Cross Toolchain
+        run: |
+          mkdir -p "$HOME/theos/toolchain/linux"
+          git clone --depth=1 https://github.com/theos/toolchain-linux.git "$HOME/theos/toolchain/linux/iphone"
+
       - name: Download iOS 16.1 SDK
         run: |
           mkdir -p "$HOME/theos/sdks"
@@ -35,19 +37,14 @@ jobs:
             https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.1.sdk.zip
           unzip -o iPhoneOS16.1.sdk.zip -d "$HOME/theos/sdks/"
           rm iPhoneOS16.1.sdk.zip
-          echo "---- SDK structure ----"
-          ls -R "$HOME/theos/sdks"
 
-      # 5️⃣ 编译并打包 Tweak
       - name: Build and Package Tweak
         env:
           THEOS: ${{ env.THEOS }}
         run: |
           make clean
-          # 建议 Makefile 顶部已经有：TARGET := iphone:clang:16.1:14.0
           make package FINALPACKAGE=1
 
-      # 6️⃣ 上传 .deb 产物
       - name: Upload .deb Package as Artifact
         uses: actions/upload-artifact@v4
         with:
