@@ -14,8 +14,7 @@ on:
 
 # 定义工作任务
 jobs:
-  build: # <--- build 定义在这里
-    # 'runs-on' 是 'build' 的一部分，所以需要向内缩进
+  build:
     runs-on: ubuntu-latest
 
     # 工作步骤
@@ -24,17 +23,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 第二步：安装编译所需的依赖环境
+      # 第二步：安装编译所需的依赖环境 (已更新)
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git perl fakeroot dpkg lzma
+          sudo apt-get install -y build-essential git perl fakeroot dpkg lzma xz-utils zstd
 
       # 第三步：克隆 Theos 工具链
       - name: Clone Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV # 设置 Theos 环境变量
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
       # 第四步：下载并安装 iOS SDK
       - name: Download iOS 16.1 SDK
@@ -44,16 +43,24 @@ jobs:
           unzip -o iPhoneOS16.1.sdk.zip -d "$HOME/theos/sdks/"
           rm iPhoneOS16.1.sdk.zip
 
-      # 第五步：编译和打包 Tweak
+      # 第五步：安装 Theos 交叉编译工具链 (这是新增的关键步骤)
+      - name: Install Theos Toolchain
+        run: |
+          curl -LO https://apt.procurs.us/toolchain.sh
+          chmod +x toolchain.sh
+          ./toolchain.sh
+          rm toolchain.sh
+      
+      # 第六步：编译和打包 Tweak
       - name: Build and Package Tweak
         run: |
           make clean
           make package
 
-      # 第六步：上传编译好的 .deb 文件作为产物
+      # 第七步：上传编译好的 .deb 文件作为产物
       - name: Upload .deb Package as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Lemon-Tweak-deb # 上传产物的名称
-          path: ./packages/*.deb # Theos 默认将 .deb 文件输出到 packages 文件夹
-          if-no-files-found: error # 如果没有找到文件，则工作流报错
+          name: Lemon-Tweak-deb
+          path: ./packages/*.deb
+          if-no-files-found: error
