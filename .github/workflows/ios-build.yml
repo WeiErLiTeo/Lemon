@@ -1,78 +1,82 @@
-# =======================
-#  GitHub Actions 完整工作流：Build Tweak
-#  作用：自动编译并打包 iOS 越狱 Tweak
-# =======================
+# ===================================================================
+#
+#          最终推荐的 Tweak 自动编译工作流
+#          特点：简洁、稳定、官方推荐、带诊断功能
+#
+# ===================================================================
 
+# 工作流名称
 name: Build Tweak
 
 on:
-  # 监控 main 分支推送
+  # 当代码被推送到 main 分支时触发
   push:
     branches:
       - main
-  # 监控 PR
-  pull_request:
-  # 允许在 Actions 页面手动触发
+  # 允许在 GitHub Actions 页面手动触发
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    env:
-      # Theos 安装路径
-      THEOS: ${{ github.workspace }}/theos
+  build-and-package:
+    # 任务名称
+    name: Compile and Package .deb
 
+    # 运行环境
+    runs-on: ubuntu-latest
+
+    # 任务步骤
     steps:
-      # 1️⃣ 检出仓库源码
-      - name: Checkout Source
+      # -------------------------------------------------------------------
+      # 步骤 1: 检出您的项目代码
+      # -------------------------------------------------------------------
+      - name: 1. Checkout Repository
         uses: actions/checkout@v4
 
-      # 2️⃣ 安装编译环境依赖
-- name: Install Dependencies
-  run: |
-    sudo apt-get update
-    sudo apt-get install -y \
-      build-essential \
-      git \
-      perl \
-      fakeroot \
-      dpkg \
-      clang \
-      unzip \
-      curl \
-      lzma
-    curl -L -o ldid.tar.gz https://github.com/theos/ldid/releases/latest/download/ldid.tar.gz
-    sudo tar -xzf ldid.tar.gz -C /usr/local/bin
-    sudo chmod +x /usr/local/bin/ldid
-
-      # 3️⃣ 安装 Theos
-      - name: Setup Theos
+      # -------------------------------------------------------------------
+      # 步骤 2: (诊断步骤) 检查关键文件是否存在且内容正确
+      # 描述: 这一步会打印出 Makefile 的内容，确保我们使用的是正确版本。
+      # -------------------------------------------------------------------
+      - name: 2. [Debug] Verify Project Files
         run: |
-          mkdir -p "$THEOS/toolchain/linux"
-          # 克隆 Theos 主仓库
-          git clone --depth=1 https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/theos/theos.git "$THEOS"
-          # 克隆 Linux 交叉编译工具链
-          git clone --depth=1 https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/theos/toolchain-linux.git "$THEOS/toolchain/linux/iphone"
+          echo "--- Verifying Makefile content ---"
+          if [ -f "Makefile" ]; then
+            cat Makefile
+          else
+            echo "错误：找不到 Makefile 文件！"
+            exit 1
+          fi
+          echo "------------------------------------"
 
-      # 4️⃣ 下载并安装 iOS 16.1 SDK
-      - name: Download iOS 16.1 SDK
+      # -------------------------------------------------------------------
+      # 步骤 3: 安装 Theos 完整编译环境
+      # 描述: 使用 Theos 官方一键安装脚本，自动安装所有依赖。
+      # -------------------------------------------------------------------
+      - name: 3. Install Theos Environment
         run: |
-          mkdir -p "$THEOS/sdks"
-          curl -L -o iPhoneOS16.1.sdk.zip \
-            https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.1.sdk.zip
-          unzip -o iPhoneOS16.1.sdk.zip -d "$THEOS/sdks/"
-          rm iPhoneOS16.1.sdk.zip
+          # 安装基础依赖
+          sudo apt-get update
+          sudo apt-get install -y git build-essential curl
+          # 执行官方安装脚本
+          bash -c "$(curl -fsSL https://get.theos.dev)"
 
-      # 5️⃣ 清理并构建 .deb 包
-      - name: Build and Package Tweak
+      # -------------------------------------------------------------------
+      # 步骤 4: 编译并打包 Tweak
+      # 描述: 执行 make 命令来编译项目。
+      # -------------------------------------------------------------------
+      - name: 4. Build and Package Tweak
         run: |
-          make clean
-          make package FINALPACKAGE=1
+          # 必须在这里导出 THEOS 环境变量，make 命令才能找到它
+          export THEOS=$HOME/theos
+          make package
 
-      # 6️⃣ 上传生成的 .deb 文件
-      - name: Upload .deb Package as Artifact
+      # -------------------------------------------------------------------
+      # 步骤 5: 上传编译好的 .deb 文件
+      # 描述: 将生成的 .deb 文件作为产物上传，方便您下载。
+      # -------------------------------------------------------------------
+      - name: 5. Upload Artifact (.deb package)
         uses: actions/upload-artifact@v4
         with:
-          name: Lemon-Tweak-deb
+          name: Tweak-Package
           path: ./packages/*.deb
           if-no-files-found: error
+
