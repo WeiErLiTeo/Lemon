@@ -1,0 +1,39 @@
+name: Build iOS Tweak
+
+on:
+  push:
+    branches:
+      - feature/toggleable-search-ui-removal
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Dependencies
+        run: |
+          brew install ldid xz
+          brew install dpkg
+          
+      - name: Setup Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git ~/theos
+          export THEOS=~/theos
+          curl -LO https://github.com/theos/sdks/archive/refs/heads/master.zip
+          unzip master.zip -d ~/theos/sdks
+          mv ~/theos/sdks/sdks-master/*.sdk ~/theos/sdks/
+          rm -rf ~/theos/sdks/sdks-master master.zip
+          
+      - name: Build Package
+        run: |
+          export THEOS=~/theos
+          make package THEOS_PACKAGE_SCHEME=rootless TARGETVERSION=16.5.1
+          
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: package
+          path: packages/*.deb
