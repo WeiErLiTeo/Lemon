@@ -1,13 +1,5 @@
-# ===================================================================
-#
-#          彻底重构后的 Tweak 自动编译工作流
-#
-# ===================================================================
+name: Build Tweak (Refactored)
 
-# 工作流名称
-name: Build Tweakt (Refactored)
-
-# 触发条件：推送到 main 分支或 feature/toggleable-search-ui-removal 分支时，或手动触发
 on:
   push:
     branches:
@@ -15,73 +7,42 @@ on:
       - 'feature/toggleable-search-ui-removal'
   workflow_dispatch:
 
-# 定义工作任务
 jobs:
   build-and-package:
-    # 任务名称
     name: Compile and Package .deb
-
-    # 运行环境
     runs-on: ubuntu-latest
 
-    # 任务步骤
     steps:
-      # -------------------------------------------------------------------
-      # 步骤 1: 检出代码
-      # 描述: 下载你的 GitHub 仓库代码到工作环境中。
-      # -------------------------------------------------------------------
-      - name: 1. Checkout Repository
+      # 1. 检出仓库
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # -------------------------------------------------------------------
-      # 步骤 2: (诊断步骤) 检查文件内容
-      # 描述: 这是为了调试而新增的关键步骤。它会列出所有文件，并打印 Makefile
-      #      的内容。这样我们就能 100% 确认工作流用的是不是正确的 Makefile。
-      # -------------------------------------------------------------------
-      - name: 2. [Debug] Verify Makefile Content
+      # 2. 安装 Theos
+      - name: Install Theos
         run: |
-          echo "--- Listing all files in the repository ---"
-          ls -la
-          echo ""
-          echo "--- Displaying content of Makefile ---"
-          cat Makefile
-          echo "----------------------------------------"
-
-      # -------------------------------------------------------------------
-      # 步骤 3: 安装 Theos 完整环境
-      # 描述: 使用 Theos 官方推荐的脚本，一步到位地安装好 Theos、最新的
-      #      交叉编译工具链 (Compiler/Toolchain) 和 iOS SDK。
-      # -------------------------------------------------------------------
-      - name: 3. Install Theos Environment
-        run: |
-          # 安装基础依赖
           sudo apt-get update
           sudo apt-get install -y git build-essential curl
-          # 使用官方脚本进行安装
-          bash -c "$(curl -fsSL https://get.theos.dev)"
+          git clone --recursive https://github.com/theos/theos $HOME/theos
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-      # -------------------------------------------------------------------
-      # 步骤 4: 编译和打包
-      # 描述: 执行 Theos 的 make 命令来编译代码并打包成 .deb 文件。
-      #      THEOS 环境变量必须在这里设置，以确保 make 命令能找到 Theos。
-      # -------------------------------------------------------------------
-      - name: 4. Build and Package Tweak
+      # 3. 调试：列出文件
+      - name: Debug – List Files
         run: |
-          export THEOS=$HOME/theos
-          make clean
-          make package
-        # 如果编译失败，继续执行下一步，以便我们能看到产物（如果有的话）
-        continue-on-error: true
+          echo "--- Repository Files ---"
+          ls -la
+          echo "--- Makefile Preview ---"
+          head -50 Makefile
 
-      # -------------------------------------------------------------------
-      # 步骤 5: 上传编译产物
-      # 描述: 将编译生成的 .deb 文件上传，方便你从 Actions 页面下载。
-      # -------------------------------------------------------------------
-      - name: 5. Upload Artifact (.deb package)
+      # 4. 编译 & 打包
+      - name: Build and Package
+        run: |
+          make clean
+          make package FINALPACKAGE=1
+
+      # 5. 上传编译产物
+      - name: Upload .deb Artifact
         uses: actions/upload-artifact@v4
         with:
           name: DYYY-Tweak-Package
-          # 路径中的 ** 会匹配所有子目录，更具弹性
           path: ./packages/**/*.deb
-          # 如果没有找到文件，只警告不报错
           if-no-files-found: warn
