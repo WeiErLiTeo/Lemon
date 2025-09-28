@@ -1,14 +1,23 @@
-TARGET = iphone:clang:latest:16.1
+# 设置目标平台和 SDK 版本，可以根据需要修改
+TARGET := tweak:clang:latest:16.0
+# 设置编译架构
 ARCHS = arm64 arm64e
-INSTALL_TARGET_PROCESSES = Aweme
+# 如果您的 Tweak 是注入 SpringBoard，可以取消下面这行的注释
+# INSTALL_TARGET_PROCESSES = SpringBoard
 
+# 包含 Theos 的通用 Makefile 规则，这是必须的第一步
 include $(THEOS)/makefiles/common.mk
 
-TWEAK_NAME = DYYY
+# TWEAK_NAME 是您插件的名称
+TWEAK_NAME = Lemon
 
-DYYY_FILES = DYYY.xm DYYYFloatClearButton.xm DYYYFloatSpeedButton.m DYYYSettings.xm DYYYABTestHook.xm DYYYLongPressPanel.xm DYYYSettingsHelper.m DYYYImagePickerDelegate.m DYYYBackupPickerDelegate.m DYYYSettingViewController.m DYYYBottomAlertView.m DYYYCustomInputView.m DYYYOptionsSelectionView.m DYYYIconOptionsDialogView.m DYYYAboutDialogView.m DYYYKeywordListView.m DYYYFilterSettingsView.m DYYYConfirmCloseView.m DYYYToast.m DYYYManager.m DYYYUtils.m CityManager.m
-DYYY_CFLAGS = -fobjc-arc -w -I$(THEOS_PROJECT_DIR)/libs/include
-DYYY_LDFLAGS = -L$(THEOS_PROJECT_DIR)/libs -lwebp -weak_framework AVFAudio
-DYYY_FRAMEWORKS = CoreAudio
+# 在这里列出您所有需要编译的源文件（.x .xm .m 文件）
+# 如果有多个文件，用空格隔开
+Lemon_FILES = Tweak.x
 
+# 包含 Tweak 特定的 Makefile 规则，这是必须的最后一步
 include $(THEOS_MAKE_PATH)/tweak.mk
+
+# 打包完成后执行的清理工作 (可选)
+after-install::
+	install.exec "sbreload"
