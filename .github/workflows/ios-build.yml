@@ -1,48 +1,56 @@
-name: Build Tweak (Refactored)
+name: Build Tweak
 
 on:
   push:
     branches:
-      - main
       - 'feature/toggleable-search-ui-removal'
+      - main
   workflow_dispatch:
 
 jobs:
-  build-and-package:
-    name: Compile and Package .deb
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. 检出仓库
+      # 1️⃣ 检出代码
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. 安装 Theos
-      - name: Install Theos
+      # 2️⃣ 安装依赖
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git build-essential curl
-          git clone --recursive https://github.com/theos/theos $HOME/theos
+          sudo apt-get install -y build-essential git perl fakeroot dpkg lzma unzip curl
+
+      # 3️⃣ 克隆 Theos
+      - name: Clone Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-      # 3. 调试：列出文件
-      - name: Debug – List Files
+      # 4️⃣ 下载并安装 iOS 16.1 SDK
+      - name: Download iOS 16.1 SDK
         run: |
-          echo "--- Repository Files ---"
-          ls -la
-          echo "--- Makefile Preview ---"
-          head -50 Makefile
+          mkdir -p "$HOME/theos/sdks"
+          curl -L -o iPhoneOS16.1.sdk.zip \
+            https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.1.sdk.zip
+          unzip -o iPhoneOS16.1.sdk.zip -d "$HOME/theos/sdks/"
+          rm iPhoneOS16.1.sdk.zip
+          echo "---- SDK structure ----"
+          ls -R "$HOME/theos/sdks"
 
-      # 4. 编译 & 打包
-      - name: Build and Package
+      # 5️⃣ 编译并打包 Tweak
+      - name: Build and Package Tweak
+        env:
+          THEOS: ${{ env.THEOS }}
         run: |
           make clean
+          # 建议 Makefile 顶部已经有：TARGET := iphone:clang:16.1:14.0
           make package FINALPACKAGE=1
 
-      # 5. 上传编译产物
-      - name: Upload .deb Artifact
+      # 6️⃣ 上传 .deb 产物
+      - name: Upload .deb Package as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DYYY-Tweak-Package
-          path: ./packages/**/*.deb
-          if-no-files-found: warn
+          name: Lemon-Tweak-deb
+          path: ./packages/*.deb
+          if-no-files-found: error
