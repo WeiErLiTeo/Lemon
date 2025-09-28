@@ -1,25 +1,61 @@
+# 工作流名称
 name: Build Tweak
 
+# 触发工作流的事件
 on:
+  # 当向指定分支推送代码时触发
   push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
+    branches:
+      - 'feature/toggleable-search-ui-removal' # 监控你正在开发的分支
+      - main # 也监控 main 分支
 
+  # 允许在 GitHub Actions 页面手动触发此工作流
+  workflow_dispatch:
+
+# 定义工作任务
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container: theos/theos-docker:latest
+    # 使用最新的 Ubuntu 虚拟机环境
+    runs_on: ubuntu-latest
 
+    # 工作步骤
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      # 第一步：检出你的仓库代码
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Build Package
-      run: make package SCHEME=rootless
+      # 第二步：安装编译所需的依赖环境
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git perl fakeroot dpkg lzma
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: DYYY-Tweak-Package
-        path: packages/*.deb
+      # 第三步：克隆 Theos 工具链
+      - name: Clone Theos
+        run: |
+          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV # 设置 Theos 环境变量
+
+      # 第四步：下载并安装 iOS SDK
+      # 这里使用 iOS 16.1 SDK 作为示例，Theos 需要它来编译
+      - name: Download iOS 16.1 SDK
+        run: |
+          mkdir -p "$HOME/theos/sdks"
+          curl -L -o iPhoneOS16.1.sdk.zip https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.1.sdk.zip
+          unzip -o iPhoneOS16.1.sdk.zip -d "$HOME/theos/sdks/"
+          rm iPhoneOS16.1.sdk.zip
+
+      # 第五步：编译和打包 Tweak
+      # 因为你的 Makefile 和 Tweak.x 文件都在仓库根目录，所以我们直接在根目录执行 make
+      - name: Build and Package Tweak
+        run: |
+          make clean
+          make package
+
+      # 第六步：上传编译好的 .deb 文件作为产物
+      - name: Upload .deb Package as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lemon-Tweak-deb # 上传产物的名称
+          path: ./packages/*.deb # Theos 默认将 .deb 文件输出到 packages 文件夹
+          if-no-files-found: error # 如果没有找到文件，则工作流报错
