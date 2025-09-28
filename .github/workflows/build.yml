@@ -23,41 +23,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 第二步：安装编译所需的依赖环境 (已更新)
+      # 第二步：安装基础依赖环境
       - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential git perl fakeroot dpkg lzma xz-utils zstd
+        run: sudo apt-get update && sudo apt-get install -y git build-essential curl
 
-      # 第三步：克隆 Theos 工具链
-      - name: Clone Theos
+      # 第三步：使用官方脚本安装 Theos, 工具链和 SDK (全新的一体化步骤)
+      - name: Install Theos, Toolchain & SDK
         run: |
-          git clone --recursive https://github.com/theos/theos.git "$HOME/theos"
+          # 设置 Theos 安装路径的环境变量
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
-
-      # 第四步：下载并安装 iOS SDK
-      - name: Download iOS 16.1 SDK
-        run: |
-          mkdir -p "$HOME/theos/sdks"
-          curl -L -o iPhoneOS16.1.sdk.zip https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.1.sdk.zip
-          unzip -o iPhoneOS16.1.sdk.zip -d "$HOME/theos/sdks/"
-          rm iPhoneOS16.1.sdk.zip
-
-      # 第五步：安装 Theos 交叉编译工具链 (这是新增的关键步骤)
-      - name: Install Theos Toolchain
-        run: |
-          curl -LO https://apt.procurs.us/toolchain.sh
-          chmod +x toolchain.sh
-          ./toolchain.sh
-          rm toolchain.sh
-      
-      # 第六步：编译和打包 Tweak
+          # 使用官方脚本自动安装 Theos 和最新工具链
+          bash -c "$(curl -fsSL https://get.theos.dev)"
+          
+      # 第四步：编译和打包 Tweak
       - name: Build and Package Tweak
         run: |
+          # 确保 Theos 环境变量在后续步骤中可用
+          export THEOS=$HOME/theos
           make clean
           make package
 
-      # 第七步：上传编译好的 .deb 文件作为产物
+      # 第五步：上传编译好的 .deb 文件作为产物
       - name: Upload .deb Package as Artifact
         uses: actions/upload-artifact@v4
         with:
