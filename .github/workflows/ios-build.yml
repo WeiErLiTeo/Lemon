@@ -1,82 +1,53 @@
-# ===================================================================
-#
-#          最终推荐的 Tweak 自动编译工作流
-#          特点：简洁、稳定、官方推荐、带诊断功能
-#
-# ===================================================================
-
-# 工作流名称
-name: Build Tweak
+name: Build Lemon iOS Dylib
 
 on:
-  # 当代码被推送到 main 分支时触发
   push:
-    branches:
-      - main
-  # 允许在 GitHub Actions 页面手动触发
   workflow_dispatch:
 
 jobs:
-  build-and-package:
-    # 任务名称
-    name: Compile and Package .deb
+  build-ios:
+    runs-on: macos-latest
 
-    # 运行环境
-    runs-on: ubuntu-latest
-
-    # 任务步骤
     steps:
-      # -------------------------------------------------------------------
-      # 步骤 1: 检出您的项目代码
-      # -------------------------------------------------------------------
-      - name: 1. Checkout Repository
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-      # -------------------------------------------------------------------
-      # 步骤 2: (诊断步骤) 检查关键文件是否存在且内容正确
-      # 描述: 这一步会打印出 Makefile 的内容，确保我们使用的是正确版本。
-      # -------------------------------------------------------------------
-      - name: 2. [Debug] Verify Project Files
+      - name: Cache ios-cmake toolchain
+        id: cache-ios
+        uses: actions/cache@v3
+        with:
+          path: ios.toolchain.cmake
+          key: ios-cmake-v1
+
+      - name: Download ios-cmake if not cached
+        if: steps.cache-ios.outputs.cache-hit != 'true'
         run: |
-          echo "--- Verifying Makefile content ---"
-          if [ -f "Makefile" ]; then
-            cat Makefile
-          else
-            echo "错误：找不到 Makefile 文件！"
-            exit 1
-          fi
-          echo "------------------------------------"
+          curl -L -o ios.toolchain.cmake \
+            https://github.com/leetal/ios-cmake/raw/master/ios.toolchain.cmake
 
-      # -------------------------------------------------------------------
-      # 步骤 3: 安装 Theos 完整编译环境
-      # 描述: 使用 Theos 官方一键安装脚本，自动安装所有依赖。
-      # -------------------------------------------------------------------
-      - name: 3. Install Theos Environment
+      - name: Build dylib for iOS
         run: |
-          # 安装基础依赖
-          sudo apt-get update
-          sudo apt-get install -y git build-essential curl
-          # 执行官方安装脚本
-          bash -c "$(curl -fsSL https://get.theos.dev)"
+          # 假设 C++ 源码在 src/main/cpp 下
+          cd src/main/cpp
 
-      # -------------------------------------------------------------------
-      # 步骤 4: 编译并打包 Tweak
-      # 描述: 执行 make 命令来编译项目。
-      # -------------------------------------------------------------------
-      - name: 4. Build and Package Tweak
-        run: |
-          # 必须在这里导出 THEOS 环境变量，make 命令才能找到它
-          export THEOS=$HOME/theos
-          make package
+          # 用 ios.toolchain.cmake 作为交叉编译工具链
+          cmake -B build \
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/ios.toolchain.cmake \
+            -DSTATICLIB=OFF \
+            -DMACOS=ON \
+            -DPLATFORM=OS64 \
+            -DCMAKE_C_FLAGS=-Wno-error=implicit-function-declaration
 
-      # -------------------------------------------------------------------
-      # 步骤 5: 上传编译好的 .deb 文件
-      # 描述: 将生成的 .deb 文件作为产物上传，方便您下载。
-      # -------------------------------------------------------------------
-      - name: 5. Upload Artifact (.deb package)
+          cmake --build build --config RelWithDebInfo --target mobileglues
+
+          # 假设目标 dylib 名称是 libmobileglues.dylib
+          codesign -s - build/libmobileglues.dylib
+
+      - name: Upload dylib artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Tweak-Package
-          path: ./packages/*.deb
-          if-no-files-found: error
-
+          name: Lemon-iOS-dylib
+          # 路径用相对路径，方便别的分支/目录切换
+          path: src/main/cpp/build/libmobileglues.dylib
