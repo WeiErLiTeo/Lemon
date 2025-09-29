@@ -1,3 +1,10 @@
-.theos
-packages
-.DS_Store
+# Ignore local dependency directories
+libs/
+
+# Ignore downloaded archives
+*.tar.gz
+
+# Theos build artifacts
+.theos/
+packages/
+obj/

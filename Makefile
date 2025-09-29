@@ -54,6 +54,13 @@ DYYY_FRAMEWORKS = CoreAudio
 CXXFLAGS += -std=c++11
 CCFLAGS  += -std=c++11
 
+# Add Homebrew paths for GitHub Actions
+ifeq ($(GITHUB_ACTIONS),true)
+    WEBP_PREFIX := $(shell brew --prefix webp)
+    DYYY_CFLAGS += -I$(WEBP_PREFIX)/include
+    DYYY_LDFLAGS += -L$(WEBP_PREFIX)/lib
+endif
+
 export THEOS_STRICT_LOGOS=0
 export ERROR_ON_WARNINGS=0
 export LOGOS_DEFAULT_GENERATOR=internal
