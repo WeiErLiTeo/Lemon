@@ -1,39 +1,51 @@
-name: Build iOS Tweak
+name: Build DYYY Tweak
 
 on:
   push:
-    branches:
-      - feature/toggleable-search-ui-removal
   workflow_dispatch:
 
 jobs:
-  build:
+  build-tweak:
     runs-on: macos-latest
-    
+
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Install Dependencies
+      # 1️⃣ 拉取源码
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      # 2️⃣ 安装依赖（Theos 依赖 perl 和 Xcode command line tools）
+      - name: Install dependencies
         run: |
-          brew install ldid xz
-          brew install dpkg
-          
+          brew install perl
+
+      # 3️⃣ 获取 Theos
       - name: Setup Theos
         run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          export THEOS=~/theos
-          curl -LO https://github.com/theos/sdks/archive/refs/heads/master.zip
-          unzip master.zip -d ~/theos/sdks
-          mv ~/theos/sdks/sdks-master/*.sdk ~/theos/sdks/
-          rm -rf ~/theos/sdks/sdks-master master.zip
-          
-      - name: Build Package
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+
+      # 4️⃣ 构建 tweak（生成 .deb）
+      - name: Build DYYY
+        env:
+          THEOS: $HOME/theos
+          GITHUB_ACTIONS: true
         run: |
-          export THEOS=~/theos
-          make package THEOS_PACKAGE_SCHEME=rootless TARGETVERSION=16.5.1
-          
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+          # 打包最终版本
+          make package FINALPACKAGE=1
+
+      # 5️⃣ 上传 deb 包
+      - name: Upload deb package
+        uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: DYYY-deb
           path: packages/*.deb
+
+      # 6️⃣ 上传 dylib 文件（从 Theos obj 目录提取）
+      - name: Upload dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: DYYY-dylib
+          path: |
+            .theos/obj/arm64/DYYY.dylib
+            .theos/obj/arm64e/DYYY.dylib
