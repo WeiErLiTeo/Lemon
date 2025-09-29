@@ -1,77 +1,33 @@
-name: Build DYYY Tweak
+name: Build Tweak
 
 on:
   push:
+    branches: [ "main", "master" ] # master is a common default branch name
   workflow_dispatch:
 
 jobs:
-  build-tweak:
+  build:
     runs-on: macos-latest
-
     steps:
-      # 1️⃣ 拉取源码
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # 2️⃣ 安装依赖
-      - name: Install dependencies
+      - name: Install Theos
         run: |
-          brew install perl webp
+          git clone --recursive https://github.com/theos/theos.git ~/theos
 
-      # 3️⃣ 设置 Xcode CLI
-      - name: Setup Xcode
+      - name: Install Dependencies
         run: |
-          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-          xcode-select -p
+          brew install ldid
 
-      # 4️⃣ 获取 Theos
-      - name: Setup Theos
+      - name: Build Package
         run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          export THEOS=~/theos
+          make package FINALPACKAGE=1
 
-      # 5️⃣ 输出目录结构，方便调试
-      - name: List project files
-        run: |
-          ls -R ${{ github.workspace }}
-          ls -R ${{ github.workspace }}/libs
-
-      # 6️⃣ 构建 tweak 并生成 .deb
-      - name: Build DYYY
-        env:
-          THEOS: $HOME/theos
-          GITHUB_ACTIONS: true
-        run: |
-          make package FINALPACKAGE=1 VERBOSE=1
-
-      # 7️⃣ 上传 deb 包
-      - name: Upload deb package
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DYYY-deb
+          name: DYYY-Tweak-Package
           path: packages/*.deb
-
-      # 8️⃣ 上传单架构 dylib
-      - name: Upload dylib files
-        uses: actions/upload-artifact@v4
-        with:
-          name: DYYY-dylib-arch
-          path: |
-            .theos/obj/arm64/DYYY.dylib
-            .theos/obj/arm64e/DYYY.dylib
-
-      # 9️⃣ 合并成 fat dylib 并上传
-      - name: Merge fat dylib
-        run: |
-          mkdir -p merged
-          lipo -create \
-            .theos/obj/arm64/DYYY.dylib \
-            .theos/obj/arm64e/DYYY.dylib \
-            -output merged/DYYY.dylib
-      - name: Upload fat dylib
-        uses: actions/upload-artifact@v4
-        with:
-          name: DYYY-fat-dylib
-          path: merged/DYYY.dylib
             .theos/obj/arm64e/DYYY.dylib
